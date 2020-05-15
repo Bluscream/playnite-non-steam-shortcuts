@@ -90,18 +90,12 @@ class Crc(object):
 
         self.MSB_Mask = 0x1 << (self.Width - 1)
         self.Mask = ((self.MSB_Mask - 1) << 1) | 1
-        if self.TableIdxWidth != None:
-            self.TableWidth = 1 << self.TableIdxWidth
-        else:
+        if self.TableIdxWidth is None:
             self.TableIdxWidth = 8
-            self.TableWidth = 1 << self.TableIdxWidth
-
+        self.TableWidth = 1 << self.TableIdxWidth
         self.DirectInit = self.XorIn
         self.NonDirectInit = self.__get_nondirect_init(self.XorIn)
-        if self.Width < 8:
-            self.CrcShift = 8 - self.Width
-        else:
-            self.CrcShift = 0
+        self.CrcShift = 8 - self.Width if self.Width < 8 else 0
 
 
     # function __get_nondirect_init
@@ -111,7 +105,7 @@ class Crc(object):
         return the non-direct init if the direct algorithm has been selected.
         """
         crc = init
-        for i in range(self.Width):
+        for _ in range(self.Width):
             bit = crc & 0x01
             if bit:
                 crc^= self.Poly
@@ -128,7 +122,7 @@ class Crc(object):
         reflect a data word, i.e. reverts the bit order.
         """
         x = data & 0x01
-        for i in range(width - 1):
+        for _ in range(width - 1):
             data >>= 1
             x = (x << 1) | (data & 0x01)
         return x
@@ -206,7 +200,7 @@ class Crc(object):
             if self.ReflectIn:
                 register = self.reflect(register, self.TableIdxWidth)
             register = register << (self.Width - self.TableIdxWidth + self.CrcShift)
-            for j in range(self.TableIdxWidth):
+            for _ in range(self.TableIdxWidth):
                 if register & (self.MSB_Mask << self.CrcShift) != 0:
                     register = (register << 1) ^ (self.Poly << self.CrcShift)
                 else:
@@ -474,14 +468,11 @@ def non_steam_shortcuts():
             exe = play_action_expanded.Path
             start_dir = ""
             arguments = ""
-        if not play_action_expanded.Type == GameActionType.URL:
+        if play_action_expanded.Type != GameActionType.URL:
             if not start_dir:
                 start_dir = FileInfo(exe).Directory.FullName
             exe = Path.Combine(start_dir, exe)
-        if game.Icon:
-            icon = PlayniteApi.Database.GetFullFilePath(game.Icon)
-        else:
-            icon = ""
+        icon = PlayniteApi.Database.GetFullFilePath(game.Icon) if game.Icon else ''
         shortcut = {
             "icon": icon,
             "exe": '"{}"'.format(exe),
